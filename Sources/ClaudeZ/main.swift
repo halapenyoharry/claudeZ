@@ -43,7 +43,7 @@ import Cocoa
         let menu = NSMenu()
         
         // New instance/pane
-        let newInstanceItem = NSMenuItem(title: "New Claude Instance", action: #selector(newInstance), keyEquivalent: "n")
+        let newInstanceItem = NSMenuItem(title: "New Claude Instance", action: #selector(newInstance), keyEquivalent: "")
         newInstanceItem.target = self
         menu.addItem(newInstanceItem)
         

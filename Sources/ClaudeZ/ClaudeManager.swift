@@ -84,7 +84,7 @@ import Cocoa
     }
     
     private func handleNewInstance(_ app: NSRunningApplication) {
-        instances.append(ClaudeInstance(process: app, paneCount: 1, windowID: nil))
+        instances.append(ClaudeInstance(process: app, windowID: nil))
         updateWindowIDs()
     }
     
