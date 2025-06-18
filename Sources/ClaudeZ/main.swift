@@ -16,7 +16,13 @@ import Cocoa
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem?.button {
-            if let image = NSImage(systemSymbolName: "rectangle.split.2x1.fill", accessibilityDescription: "ClaudeZ") {
+            // Try to load custom icon first
+            if let customIcon = NSImage(named: "MenuBarIcon") {
+                customIcon.isTemplate = true
+                customIcon.size = NSSize(width: 18, height: 18)
+                button.image = customIcon
+                print("ClaudeZ: Custom menu bar icon set")
+            } else if let image = NSImage(systemSymbolName: "rectangle.split.2x1.fill", accessibilityDescription: "ClaudeZ") {
                 image.isTemplate = true
                 button.image = image
                 print("ClaudeZ: Status bar icon set")
