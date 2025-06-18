@@ -89,8 +89,27 @@ import Cocoa
     }
     
     func launchNewInstance() {
-        print("LaunchNewInstance called")
+        print("Launching new Claude instance")
+        
+        // Check instance limit
+        let maxInstances = UserDefaults.standard.integer(forKey: "ClaudeZ.MaxInstances")
+        let limit = maxInstances > 0 ? maxInstances : 5
+        
+        if instances.count >= limit {
+            showInstanceLimitAlert(limit: limit)
+            return
+        }
+        
         launchNewClaudeProcess()
+    }
+    
+    private func showInstanceLimitAlert(limit: Int) {
+        let alert = NSAlert()
+        alert.messageText = "Instance Limit Reached"
+        alert.informativeText = "You've reached the maximum of \(limit) Claude instances. You can change this limit in Preferences."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     
@@ -146,7 +165,8 @@ import Cocoa
             if let error = error {
                 print("Error launching Claude Desktop: \(error)")
             } else if let app = app {
-                print("Successfully launched Claude Desktop: \(app.bundleIdentifier ?? "unknown")")
+                print("Successfully launched new Claude instance: \(app.bundleIdentifier ?? "unknown")")
+                self.handleNewInstance(app)
             }
         }
     }

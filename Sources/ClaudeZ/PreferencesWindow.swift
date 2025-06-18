@@ -1,9 +1,9 @@
 import Cocoa
 
 class PreferencesWindow: NSWindowController {
-    private var allowMultipleInstancesCheckbox: NSButton!
-    private var maxPanesSlider: NSSlider!
-    private var maxPanesLabel: NSTextField!
+    private var launchAtLoginCheckbox: NSButton!
+    private var maxInstancesSlider: NSSlider!
+    private var maxInstancesLabel: NSTextField!
     
     convenience init() {
         let window = NSWindow(
@@ -29,28 +29,30 @@ class PreferencesWindow: NSWindowController {
         stackView.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
-        allowMultipleInstancesCheckbox = NSButton(checkboxWithTitle: "Allow multiple Claude Desktop instances", target: self, action: #selector(toggleMultipleInstances))
+        launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch ClaudeZ at login", target: self, action: #selector(toggleLaunchAtLogin))
         
-        let panesContainer = NSStackView()
-        panesContainer.orientation = .horizontal
-        panesContainer.spacing = 10
+        // Max instances control
+        let instancesContainer = NSStackView()
+        instancesContainer.orientation = .horizontal
+        instancesContainer.spacing = 10
         
-        let panesTitle = NSTextField(labelWithString: "Maximum panes per instance:")
-        maxPanesSlider = NSSlider(value: 4, minValue: 1, maxValue: 4, target: self, action: #selector(maxPanesChanged))
-        maxPanesSlider.numberOfTickMarks = 4
-        maxPanesSlider.allowsTickMarkValuesOnly = true
-        maxPanesLabel = NSTextField(labelWithString: "4")
+        let instancesTitle = NSTextField(labelWithString: "Maximum Claude instances:")
+        maxInstancesSlider = NSSlider(value: 5, minValue: 1, maxValue: 10, target: self, action: #selector(maxInstancesChanged))
+        maxInstancesSlider.numberOfTickMarks = 10
+        maxInstancesSlider.allowsTickMarkValuesOnly = true
+        maxInstancesLabel = NSTextField(labelWithString: "5")
+        maxInstancesLabel.frame.size.width = 30
         
-        panesContainer.addArrangedSubview(panesTitle)
-        panesContainer.addArrangedSubview(maxPanesSlider)
-        panesContainer.addArrangedSubview(maxPanesLabel)
+        instancesContainer.addArrangedSubview(instancesTitle)
+        instancesContainer.addArrangedSubview(maxInstancesSlider)
+        instancesContainer.addArrangedSubview(maxInstancesLabel)
         
-        let noteLabel = NSTextField(wrappingLabelWithString: "Note: ClaudeZ will use panes (like iTerm2) when multiple instances are not allowed.")
+        let noteLabel = NSTextField(wrappingLabelWithString: "ClaudeZ helps you manage Claude Desktop instances and MCP servers.")
         noteLabel.font = .systemFont(ofSize: 11)
         noteLabel.textColor = .secondaryLabelColor
         
-        stackView.addArrangedSubview(allowMultipleInstancesCheckbox)
-        stackView.addArrangedSubview(panesContainer)
+        stackView.addArrangedSubview(launchAtLoginCheckbox)
+        stackView.addArrangedSubview(instancesContainer)
         stackView.addArrangedSubview(noteLabel)
         
         contentView.addSubview(stackView)
@@ -64,18 +66,20 @@ class PreferencesWindow: NSWindowController {
     
     private func loadPreferences() {
         let defaults = UserDefaults.standard
-        allowMultipleInstancesCheckbox.state = defaults.bool(forKey: "ClaudeZ.AllowMultipleInstances") ? .on : .off
-        let maxPanes = defaults.integer(forKey: "ClaudeZ.MaxPanes")
-        maxPanesSlider.integerValue = maxPanes > 0 ? maxPanes : 4
-        maxPanesLabel.stringValue = "\(maxPanesSlider.integerValue)"
+        launchAtLoginCheckbox.state = defaults.bool(forKey: "ClaudeZ.LaunchAtLogin") ? .on : .off
+        
+        let maxInstances = defaults.integer(forKey: "ClaudeZ.MaxInstances")
+        maxInstancesSlider.integerValue = maxInstances > 0 ? maxInstances : 5
+        maxInstancesLabel.stringValue = "\(maxInstancesSlider.integerValue)"
     }
     
-    @objc private func toggleMultipleInstances(_ sender: NSButton) {
-        UserDefaults.standard.set(sender.state == .on, forKey: "ClaudeZ.AllowMultipleInstances")
+    @objc private func toggleLaunchAtLogin(_ sender: NSButton) {
+        UserDefaults.standard.set(sender.state == .on, forKey: "ClaudeZ.LaunchAtLogin")
+        // TODO: Actually implement launch at login functionality
     }
     
-    @objc private func maxPanesChanged(_ sender: NSSlider) {
-        maxPanesLabel.stringValue = "\(sender.integerValue)"
-        UserDefaults.standard.set(sender.integerValue, forKey: "ClaudeZ.MaxPanes")
+    @objc private func maxInstancesChanged(_ sender: NSSlider) {
+        maxInstancesLabel.stringValue = "\(sender.integerValue)"
+        UserDefaults.standard.set(sender.integerValue, forKey: "ClaudeZ.MaxInstances")
     }
 }

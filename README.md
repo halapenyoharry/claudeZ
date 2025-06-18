@@ -2,15 +2,18 @@
 
 A lightweight macOS menu bar app for managing multiple Claude Desktop instances. Perfect for power users who need multiple Claude conversations running simultaneously.
 
-![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
 ![Swift](https://img.shields.io/badge/swift-5.0+-orange.svg)
 
 ## ✨ Features
 
-- **🎯 Launch Multiple Instances**: Create separate Claude Desktop instances for different workflows
+- **🎯 Multiple Instances**: Launch separate Claude Desktop instances for independent conversations
 - **📊 Instance Management**: See all running Claude instances at a glance
 - **⚡ Quick Focus**: Switch between instances with keyboard shortcuts (⌘1, ⌘2, etc.)
+- **🔧 MCP Server Control**: Toggle MCP servers on/off directly from the menu bar
+- **📝 MCP Config Editor**: Quick access to edit your Claude Desktop configuration
+- **🎤 Voice Typing**: Dictate text directly into Claude with real-time transcription
 - **🎨 Clean Menu Bar UI**: Minimal, native macOS design
 - **🔄 Automatic Detection**: Discovers existing Claude instances on startup
 
@@ -53,10 +56,21 @@ Easily see and switch between all your Claude instances.
 
 ## 🎮 Usage
 
+### First Time Setup (Important!)
+For the best experience with multiple instances:
+1. **Quit all Claude Desktop instances** first
+2. **Launch ClaudeZ** from your menu bar
+3. **Create one instance** and authenticate with your Anthropic account
+4. **Wait for authentication to complete** (you'll see the Claude interface)
+5. **Now create additional instances** - they'll share the authentication
+
+### Daily Usage
 1. **Launch ClaudeZ** - The app will appear in your menu bar
 2. **Create New Instance** - Click "New Claude Instance" or press ⌘N
 3. **Switch Between Instances** - Use the Instances menu or press ⌘1, ⌘2, etc.
-4. **Manage Preferences** - Access settings via Preferences menu
+4. **Toggle MCP Servers** - Use the MCP Servers menu to enable/disable servers
+5. **Voice Typing** - Press ⌘V to start dictating text into Claude
+6. **Edit MCP Config** - Click "Edit MCP Config" to open in TextEdit
 
 ## ⚙️ System Requirements
 
@@ -67,21 +81,23 @@ Easily see and switch between all your Claude instances.
 ## 🔐 Permissions
 
 ClaudeZ requires the following permissions:
-- **Accessibility**: To send keyboard shortcuts to Claude Desktop (for instance switching)
+- **Accessibility**: To send keyboard shortcuts to Claude Desktop
+- **Speech Recognition**: For voice typing functionality
+- **Microphone**: For voice typing functionality
 
 To grant permissions:
-1. Open System Settings > Privacy & Security > Accessibility
-2. Add ClaudeZ to the allowed apps
+1. Open System Settings > Privacy & Security
+2. Add ClaudeZ to Accessibility, Speech Recognition, and Microphone
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. Remember that this project uses a non-commercial license.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-**TL;DR**: You can use and share this freely, but not for commercial purposes. Any modifications must use the same license.
+**TL;DR**: You can use, modify, and distribute this software for any purpose, including commercial use.
 
 ## 🙏 Acknowledgments
 
@@ -92,7 +108,8 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 ## 🐛 Known Issues
 
 - Instance detection may take a few seconds after Claude Desktop launches
-- Maximum number of instances limited by system resources
+- Voice typing requires macOS speech recognition permissions
+- MCP server changes require Claude Desktop restart
 
 ## 📮 Feedback
 

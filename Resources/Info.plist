@@ -23,6 +23,10 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>ClaudeZ needs to send keyboard commands to Claude Desktop to manage panes.</string>
+    <string>ClaudeZ needs to send keyboard commands to Claude Desktop to manage windows.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>ClaudeZ needs access to speech recognition for voice typing.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>ClaudeZ needs access to your microphone for voice typing.</string>
 </dict>
 </plist>

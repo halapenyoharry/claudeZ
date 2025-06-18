@@ -31,9 +31,13 @@ import Cocoa
         statusItem?.menu = createMenu()
         print("ClaudeZ: Menu created")
         
-        // Set up periodic refresh of instances
+        // Set up periodic refresh
         Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.refreshInstances()
+            // Also refresh MCP menu periodically
+            if let menu = self?.statusItem?.menu?.item(withTitle: "MCP Servers")?.submenu {
+                self?.updateMCPMenu(menu)
+            }
         }
         
         print("ClaudeZ: Setup complete")
@@ -42,8 +46,8 @@ import Cocoa
     func createMenu() -> NSMenu {
         let menu = NSMenu()
         
-        // New instance/pane
-        let newInstanceItem = NSMenuItem(title: "New Claude Instance", action: #selector(newInstance), keyEquivalent: "")
+        // New instance
+        let newInstanceItem = NSMenuItem(title: "New Claude Instance", action: #selector(newInstance), keyEquivalent: "n")
         newInstanceItem.target = self
         menu.addItem(newInstanceItem)
         
@@ -57,6 +61,25 @@ import Cocoa
         menu.addItem(instancesMenuItem)
         
         menu.addItem(NSMenuItem.separator())
+        
+        // MCP Servers submenu
+        let mcpMenuItem = NSMenuItem(title: "MCP Servers", action: nil, keyEquivalent: "")
+        let mcpMenu = NSMenu()
+        updateMCPMenu(mcpMenu)
+        mcpMenuItem.submenu = mcpMenu
+        menu.addItem(mcpMenuItem)
+        
+        // Open MCP Config
+        let openConfigItem = NSMenuItem(title: "Edit MCP Config...", action: #selector(openMCPConfig), keyEquivalent: "")
+        openConfigItem.target = self
+        menu.addItem(openConfigItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // Voice Typing
+        let voiceItem = NSMenuItem(title: "Start Voice Typing", action: #selector(toggleVoiceTyping), keyEquivalent: "v")
+        voiceItem.target = self
+        menu.addItem(voiceItem)
         
         // Preferences
         let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(showPreferences), keyEquivalent: ",")
@@ -95,11 +118,67 @@ import Cocoa
     @objc func newInstance() {
         print("New Instance clicked")
         claudeManager?.launchNewInstance()
+        
+        // Refresh instances after a delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            if let menu = self?.statusItem?.menu?.item(withTitle: "Instances")?.submenu {
-                self?.updateInstancesMenu(menu)
-            }
+            self?.refreshInstances()
         }
+    }
+    
+    func updateMCPMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+        
+        guard let config = MCPManager.shared.loadConfig() else {
+            menu.addItem(NSMenuItem(title: "No MCP config found", action: nil, keyEquivalent: ""))
+            return
+        }
+        
+        let sortedServers = config.mcpServers.sorted { $0.key < $1.key }
+        
+        for (serverName, server) in sortedServers {
+            let displayName = serverName.hasPrefix("_") ? String(serverName.dropFirst()) : serverName
+            let isEnabled = MCPManager.shared.isServerEnabled(serverName)
+            
+            let item = NSMenuItem(title: displayName, action: #selector(toggleMCPServer(_:)), keyEquivalent: "")
+            item.target = self
+            item.state = isEnabled ? .on : .off
+            item.representedObject = serverName
+            
+            if let description = server.description {
+                item.toolTip = description
+            }
+            
+            menu.addItem(item)
+        }
+    }
+    
+    @objc func toggleMCPServer(_ sender: NSMenuItem) {
+        guard let serverName = sender.representedObject as? String else { return }
+        
+        let isCurrentlyEnabled = MCPManager.shared.isServerEnabled(serverName)
+        if MCPManager.shared.toggleServer(named: serverName, enabled: !isCurrentlyEnabled) {
+            sender.state = !isCurrentlyEnabled ? .on : .off
+            
+            // Update the menu to reflect the change
+            if let menu = sender.menu {
+                updateMCPMenu(menu)
+            }
+            
+            showMCPRestartAlert()
+        }
+    }
+    
+    @objc func openMCPConfig() {
+        MCPManager.shared.openInTextEdit()
+    }
+    
+    func showMCPRestartAlert() {
+        let alert = NSAlert()
+        alert.messageText = "MCP Configuration Changed"
+        alert.informativeText = "You'll need to restart Claude Desktop for MCP server changes to take effect."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
     
     
@@ -119,10 +198,25 @@ import Cocoa
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    
     func refreshInstances() {
         claudeManager?.detectExistingInstances()
         if let menu = statusItem?.menu?.item(withTitle: "Instances")?.submenu {
             updateInstancesMenu(menu)
+        }
+    }
+    
+    @objc func toggleVoiceTyping() {
+        VoiceTypingManager.shared.toggleVoiceTyping()
+        
+        // Update menu item title based on state
+        if let menu = statusItem?.menu {
+            for item in menu.items {
+                if item.action == #selector(toggleVoiceTyping) {
+                    item.title = VoiceTypingManager.shared.isRecording ? "Stop Voice Typing" : "Start Voice Typing"
+                    break
+                }
+            }
         }
     }
 }
