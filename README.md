@@ -6,6 +6,10 @@ A lightweight macOS menu bar app for managing multiple Claude Desktop instances.
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
 ![Swift](https://img.shields.io/badge/swift-5.0+-orange.svg)
 
+## 📥 Quick Download
+
+**[⬇️ Download ClaudeZ for macOS](https://github.com/halapenyoharry/claudeZ/raw/main/releases/ClaudeZ-1.0.0.pkg)** (1.0.0)
+
 ## ✨ Features
 
 - **🎯 Multiple Instances**: Launch separate Claude Desktop instances for independent conversations
@@ -21,7 +25,7 @@ A lightweight macOS menu bar app for managing multiple Claude Desktop instances.
 
 ### Option 1: Download the Installer (Recommended)
 
-1. Download the latest `ClaudeZ-1.0.0.pkg` from the [Releases](https://github.com/halapenyoharry/claudeZ/releases) page
+1. [**Download ClaudeZ-1.0.0.pkg**](https://github.com/halapenyoharry/claudeZ/raw/main/releases/ClaudeZ-1.0.0.pkg) (Direct download)
 2. Double-click the .pkg file to run the installer
 3. Follow the installation wizard
 4. Launch ClaudeZ from Applications or Spotlight
