@@ -19,27 +19,27 @@ A lightweight macOS menu bar app for managing multiple Claude Desktop instances.
 
 ## 🚀 Installation
 
-### Option 1: Build from Source
+### Option 1: Download the App (Recommended)
+
+1. Download the latest `ClaudeZ-Installer.dmg` from the [Releases](https://github.com/halapenyoharry/claudeZ/releases) page
+2. Open the DMG and drag ClaudeZ.app to your Applications folder
+3. Launch ClaudeZ from Applications or Spotlight
+
+### Option 2: Build from Source
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/claudeZ.git
+git clone https://github.com/halapenyoharry/claudeZ.git
 cd claudeZ
 ```
 
 2. Build the app:
 ```bash
-swift build --configuration release
+./build-app.sh
 ```
 
-3. Run the app:
-```bash
-.build/release/ClaudeZ
-```
-
-### Option 2: Download Pre-built Binary
-
-Coming soon! Check the [Releases](https://github.com/yourusername/claudeZ/releases) page.
+3. The app will be created as `ClaudeZ.app` in the current directory
+4. Drag it to /Applications or run it directly
 
 ## 📸 Screenshots
 
