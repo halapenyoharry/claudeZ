@@ -17,15 +17,21 @@ import Cocoa
         
         if let button = statusItem?.button {
             // Try to load custom icon first
-            if let customIcon = NSImage(named: "MenuBarIcon") {
+            if let iconURL = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
+               let customIcon = NSImage(contentsOf: iconURL) {
                 customIcon.isTemplate = true
                 customIcon.size = NSSize(width: 18, height: 18)
                 button.image = customIcon
                 print("ClaudeZ: Custom menu bar icon set")
-            } else if let image = NSImage(systemSymbolName: "rectangle.split.2x1.fill", accessibilityDescription: "ClaudeZ") {
+            } else if let customIcon = NSImage(named: "MenuBarIcon") {
+                customIcon.isTemplate = true
+                customIcon.size = NSSize(width: 18, height: 18)
+                button.image = customIcon
+                print("ClaudeZ: Custom menu bar icon set (named)")
+            } else if let image = NSImage(systemSymbolName: "asterisk", accessibilityDescription: "ClaudeZ") {
                 image.isTemplate = true
                 button.image = image
-                print("ClaudeZ: Status bar icon set")
+                print("ClaudeZ: Using asterisk symbol")
             } else {
                 button.title = "CZ"
                 print("ClaudeZ: Using text fallback for status bar")
