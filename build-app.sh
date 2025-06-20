@@ -23,10 +23,10 @@ cp .build/release/ClaudeZ ClaudeZ.app/Contents/MacOS/
 # Copy Info.plist
 cp Resources/Info.plist ClaudeZ.app/Contents/
 
-# Create icon (we'll use a simple icon for now)
-# In a real app, you'd have an .icns file
-echo "Creating placeholder icon..."
-touch ClaudeZ.app/Contents/Resources/AppIcon.icns
+# Copy icons
+echo "Copying icons..."
+cp Resources/AppIcon.icns ClaudeZ.app/Contents/Resources/ 2>/dev/null || echo "Warning: AppIcon.icns not found"
+cp Resources/MenuBarIcon*.png ClaudeZ.app/Contents/Resources/ 2>/dev/null || echo "Warning: MenuBarIcon not found"
 
 # Set executable permissions
 chmod +x ClaudeZ.app/Contents/MacOS/ClaudeZ

@@ -72,6 +72,11 @@ import Cocoa
         instancesMenuItem.submenu = instancesMenu
         menu.addItem(instancesMenuItem)
         
+        // Force refresh instances
+        let refreshItem = NSMenuItem(title: "Force Refresh Instances", action: #selector(forceRefreshInstances), keyEquivalent: "r")
+        refreshItem.target = self
+        menu.addItem(refreshItem)
+        
         menu.addItem(NSMenuItem.separator())
         
         // MCP Servers submenu
@@ -89,7 +94,7 @@ import Cocoa
         menu.addItem(NSMenuItem.separator())
         
         // Voice Typing
-        let voiceItem = NSMenuItem(title: "Start Voice Typing", action: #selector(toggleVoiceTyping), keyEquivalent: "v")
+        let voiceItem = NSMenuItem(title: "Voice Typing...", action: #selector(toggleVoiceTyping), keyEquivalent: "v")
         voiceItem.target = self
         menu.addItem(voiceItem)
         
@@ -115,12 +120,18 @@ import Cocoa
             menu.addItem(NSMenuItem(title: "No instances running", action: nil, keyEquivalent: ""))
         } else {
             for (index, instance) in manager.instances.enumerated() {
-                let title = "Instance \(index + 1)"
+                let appName = instance.process.localizedName ?? "Unknown"
+                let pid = instance.process.processIdentifier
+                let title = "Instance \(index + 1): \(appName) (PID: \(pid))"
                 let item = NSMenuItem(title: title, action: #selector(focusInstance(_:)), keyEquivalent: "\(index + 1)")
                 item.tag = index
                 item.target = self
                 if instance.process.isActive {
                     item.state = .on
+                }
+                // Add tooltip with more info
+                if let bundleId = instance.process.bundleIdentifier {
+                    item.toolTip = "Bundle: \(bundleId)\nTerminated: \(instance.process.isTerminated)"
                 }
                 menu.addItem(item)
             }
@@ -218,18 +229,20 @@ import Cocoa
         }
     }
     
-    @objc func toggleVoiceTyping() {
-        VoiceTypingManager.shared.toggleVoiceTyping()
+    @objc func forceRefreshInstances() {
+        print("\n🔄 FORCE REFRESH REQUESTED")
+        // Clear all instances first
+        claudeManager?.clearAllInstances()
         
-        // Update menu item title based on state
-        if let menu = statusItem?.menu {
-            for item in menu.items {
-                if item.action == #selector(toggleVoiceTyping) {
-                    item.title = VoiceTypingManager.shared.isRecording ? "Stop Voice Typing" : "Start Voice Typing"
-                    break
-                }
-            }
+        // Then detect fresh
+        claudeManager?.detectExistingInstances()
+        if let menu = statusItem?.menu?.item(withTitle: "Instances")?.submenu {
+            updateInstancesMenu(menu)
         }
+    }
+    
+    @objc func toggleVoiceTyping() {
+        VoiceTypingManager.shared.showVoiceTyping()
     }
 }
 

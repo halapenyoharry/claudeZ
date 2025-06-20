@@ -8,22 +8,31 @@ import Cocoa
     
     private(set) var instances: [ClaudeInstance] = []
     private let workspace = NSWorkspace.shared
-    private var observer: NSObjectProtocol?
+    private var launchObserver: NSObjectProtocol?
+    private var terminateObserver: NSObjectProtocol?
     
     override init() {
         super.init()
-        detectExistingInstances()
         setupNotifications()
+        // Delay initial detection to avoid race conditions on startup
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            print("🚀 Initial instance detection (delayed)")
+            self?.detectExistingInstances()
+        }
     }
     
     deinit {
-        if let observer = observer {
+        if let observer = launchObserver {
+            workspace.notificationCenter.removeObserver(observer)
+        }
+        if let observer = terminateObserver {
             workspace.notificationCenter.removeObserver(observer)
         }
     }
     
     private func setupNotifications() {
-        observer = workspace.notificationCenter.addObserver(
+        // Observe app launches
+        launchObserver = workspace.notificationCenter.addObserver(
             forName: NSWorkspace.didLaunchApplicationNotification,
             object: nil,
             queue: .main
@@ -34,11 +43,33 @@ import Cocoa
                 self?.handleNewInstance(app)
             }
         }
+        
+        // Also observe app terminations
+        terminateObserver = workspace.notificationCenter.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+                self?.handleTerminatedInstance(app)
+            }
+        }
     }
     
     func detectExistingInstances() {
-        // Clear existing instances
-        instances.removeAll()
+        print("\n=== Detecting Claude Instances ===")
+        print("Before cleanup: \(instances.count) instances tracked")
+        
+        // First, remove any terminated instances
+        let removedCount = instances.filter { $0.process.isTerminated }.count
+        instances.removeAll { instance in
+            let isTerminated = instance.process.isTerminated
+            if isTerminated {
+                print("Removing terminated instance: PID \(instance.process.processIdentifier)")
+            }
+            return isTerminated
+        }
+        print("Removed \(removedCount) terminated instances")
         
         // Try different bundle identifiers
         let possibleBundleIds = [
@@ -49,23 +80,80 @@ import Cocoa
             "com.anthropics.claude"
         ]
         
-        let claudeApps = workspace.runningApplications.filter { app in
-            // Skip our own app
+        // Debug: Show all running applications
+        print("\nChecking all running applications:")
+        let allApps = workspace.runningApplications
+        for app in allApps {
+            if let name = app.localizedName, name.lowercased().contains("claude") {
+                print("  - \(name) [PID: \(app.processIdentifier), Bundle: \(app.bundleIdentifier ?? "none"), Terminated: \(app.isTerminated)]")
+            }
+        }
+        
+        let claudeApps = allApps.filter { app in
+            // Skip our own app (ClaudeZ)
             if app.processIdentifier == ProcessInfo.processInfo.processIdentifier {
                 return false
             }
             
-            if let bundleId = app.bundleIdentifier {
-                return possibleBundleIds.contains(bundleId) || bundleId.lowercased().contains("claude")
+            // Skip if it's ClaudeZ by name
+            if let appName = app.localizedName, appName == "ClaudeZ" {
+                print("  Skipping ClaudeZ app")
+                return false
             }
-            return app.localizedName?.lowercased().contains("claude") ?? false
+            
+            // Skip background/helper processes (they often don't have bundle IDs)
+            guard let bundleId = app.bundleIdentifier else {
+                if let name = app.localizedName {
+                    print("  Skipping app without bundle ID: \(name)")
+                }
+                return false
+            }
+            
+            // Skip helper processes - only count main Claude app
+            if let appPath = app.bundleURL?.path,
+               appPath.contains("Helper") || appPath.contains("Frameworks") {
+                print("  Skipping helper process: \(app.localizedName ?? "Unknown")")
+                return false
+            }
+            
+            // Also check executable path
+            if let execPath = app.executableURL?.path,
+               !execPath.contains("/MacOS/Claude") || execPath.contains("Helper") {
+                print("  Skipping non-main Claude process: \(execPath)")
+                return false
+            }
+            
+            // Only match exact Claude Desktop bundle IDs
+            let isClaudeDesktop = possibleBundleIds.contains(bundleId)
+            
+            if isClaudeDesktop {
+                print("  ✓ Found Claude Desktop: \(app.localizedName ?? "Unknown") [Bundle: \(bundleId), Path: \(app.bundleURL?.path ?? "unknown")]")
+            }
+            
+            return isClaudeDesktop
         }
         
-        print("Found \(claudeApps.count) Claude instances")
+        print("\nFound \(claudeApps.count) Claude apps in system")
+        
+        // Add new instances that aren't already tracked
         for app in claudeApps {
-            print("- \(app.localizedName ?? "Unknown") [\(app.bundleIdentifier ?? "no bundle ID")]")
-            instances.append(ClaudeInstance(process: app, windowID: nil))
+            let isAlreadyTracked = instances.contains { instance in
+                instance.process.processIdentifier == app.processIdentifier
+            }
+            
+            if !isAlreadyTracked {
+                print("Adding new Claude instance: \(app.localizedName ?? "Unknown") [PID: \(app.processIdentifier), Bundle: \(app.bundleIdentifier ?? "no bundle ID")]")
+                instances.append(ClaudeInstance(process: app, windowID: nil))
+            } else {
+                print("Already tracking: \(app.localizedName ?? "Unknown") [PID: \(app.processIdentifier)]")
+            }
         }
+        
+        print("\nFinal state: tracking \(instances.count) Claude instances")
+        for (index, instance) in instances.enumerated() {
+            print("  Instance \(index + 1): PID \(instance.process.processIdentifier), Terminated: \(instance.process.isTerminated)")
+        }
+        print("=== End Detection ===\n")
         
         updateWindowIDs()
     }
@@ -88,12 +176,24 @@ import Cocoa
         updateWindowIDs()
     }
     
+    private func handleTerminatedInstance(_ app: NSRunningApplication) {
+        instances.removeAll { instance in
+            instance.process.processIdentifier == app.processIdentifier
+        }
+        print("Removed terminated Claude instance. Now tracking \(instances.count) instances")
+    }
+    
     func launchNewInstance() {
         print("Launching new Claude instance")
+        
+        // First refresh the instance list to ensure accurate count
+        detectExistingInstances()
         
         // Check instance limit
         let maxInstances = UserDefaults.standard.integer(forKey: "ClaudeZ.MaxInstances")
         let limit = maxInstances > 0 ? maxInstances : 5
+        
+        print("Current instances: \(instances.count), Limit: \(limit)")
         
         if instances.count >= limit {
             showInstanceLimitAlert(limit: limit)
@@ -175,5 +275,10 @@ import Cocoa
     func focusInstance(at index: Int) {
         guard index < instances.count else { return }
         instances[index].process.activate(options: .activateIgnoringOtherApps)
+    }
+    
+    func clearAllInstances() {
+        print("Clearing all tracked instances")
+        instances.removeAll()
     }
 }
